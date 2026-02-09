@@ -1,0 +1,9 @@
+path,spoken_language,signed_language,start,end,words,glosses,priority
+fsl/kleine.pose,fr,fsl,0,0,enfants,ENFANTS,0
+fsl/essen.pose,fr,fsl,0,0,mangent,MANGENT,0
+fsl/pizza.pose,fr,fsl,0,0,pizza,PIZZA,0
+fsl/kinder.pose,fr,fsl,0,0,zurich,ZURICH,0
+ase/kleine.pose,en,ase,0,0,children,CHILDREN,0
+ase/essen.pose,en,ase,0,0,eat,EAT,0
+ase/pizza.pose,en,ase,0,0,pizza,PIZZA,0
+ase/kinder.pose,en,ase,0,0,zurich,ZURICH,0

@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pose-format>=0.4.1
+numpy
+scipy
+simplemma>=1.0.0
+imageio
+imageio-ffmpeg
+matplotlib
+openai-whisper
+yt-dlp
+tensorflow==2.16.1
+pillow
+spacy

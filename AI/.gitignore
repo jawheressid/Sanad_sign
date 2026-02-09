@@ -1,0 +1,11 @@
+.idea/
+build/
+spoken_to_signed.egg-info/
+.env
+**/__pycache__/
+.DS_Store
+*.code-workspace
+dist/
+quick_test.pose
+.venv/
+.venv311/

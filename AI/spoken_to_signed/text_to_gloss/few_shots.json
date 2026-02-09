@@ -1,0 +1,40 @@
+[
+  {
+    "spoken_language": "fr",
+    "signed_language": "fsl",
+    "text": "Bonjour. Je m'appelle Marie.",
+    "sentences": [
+      "BONJOUR/Bonjour",
+      "JE/Je APPELLE/m'appelle %(Marie)"
+    ],
+    "source": "made up"
+  },
+  {
+    "spoken_language": "fr",
+    "signed_language": "fsl",
+    "text": "Nous allons au marché demain.",
+    "sentences": [
+      "NOUS/Nous ALLER/allons MARCHÉ/marché DEMAIN/demain"
+    ],
+    "source": "made up"
+  },
+  {
+    "spoken_language": "en",
+    "signed_language": "ase",
+    "text": "Hello. My name is Alex.",
+    "sentences": [
+      "HELLO/Hello",
+      "MY/My NAME/name %(Alex)"
+    ],
+    "source": "made up"
+  },
+  {
+    "spoken_language": "en",
+    "signed_language": "ase",
+    "text": "We meet at the park tomorrow.",
+    "sentences": [
+      "WE/We MEET/meet PARK/park TOMORROW/tomorrow"
+    ],
+    "source": "made up"
+  }
+]
