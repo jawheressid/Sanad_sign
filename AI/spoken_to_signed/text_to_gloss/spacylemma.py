@@ -13,13 +13,12 @@ def text_to_gloss(text: str, language: str, ignore_punctuation: bool = False, **
 
     model_name = LANGUAGE_MODELS_SPACY[language]
 
-    # disable unnecessary components to make lemmatization faster
 
     spacy_model = load_spacy_model(model_name, disable=("parser", "ner"))
 
     doc = spacy_model(text)
 
-    glosses = []  # type: Gloss
+    glosses = []  
 
     for token in doc:
         if ignore_punctuation is True:

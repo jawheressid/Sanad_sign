@@ -1,5 +1,3 @@
-# The files are upwards of 500MB. To make them a part of the installable, I would like them to be less
-# Therefore, this file reduces holistic (performs pre-proecssing) as well as runs trim_pose ahead of time
 from collections import defaultdict
 from pathlib import Path
 
@@ -94,12 +92,9 @@ for file in tqdm(Path.cwd().rglob("*.pose")):
     interpolation_fps = round(interpolation_fps)
 
     if interpolate:
-        # We want to avoid multiple interpolates, so we only interpolate once if needed
         print("Interpolating", file, interpolation_fps)
 
-        # print("Before:", {"fps": pose.body.fps, "duration": len(pose.body.data) / pose.body.fps})
         pose = pose.interpolate(interpolation_fps)
         pose.body.fps = original_fps
-        # print("After:", {"fps": pose.body.fps, "duration": len(pose.body.data) / pose.body.fps})
         with open(file, "wb") as f:
             pose.write(f)

@@ -37,8 +37,6 @@ def attach_svp(tokens):
 
 
 def get_clauses(tokens):
-    # for token in tokens:
-    #    print_token(token)
     def diff(l1, l2):
         return [x for x in l1 if x not in l2]
 
@@ -47,7 +45,7 @@ def get_clauses(tokens):
         for t in tokens
         if (t.pos_ == "VERB" and t.dep_ != "oc")
         or (t.pos_ == "AUX" and t.dep_ == "mo" and t.head.pos_ == "VERB")  # AUX in subclause
-        or t.dep_ == "ROOT"  # ROOT to catch AUX in main clause
+        or t.dep_ == "ROOT"  
     ]
     subtrees = [[t for t in v.subtree] for v in verbs]
     clauses = [s for s in subtrees]
@@ -66,9 +64,6 @@ def get_clauses(tokens):
 
 
 def reorder_sub_main(clauses):
-    # find which clause is the subordinate
-    # wenn KOUS ->cp-> benötigen ->mo-> Suchen: MAIN-SUBwenn to be reordered as SUBwenn-MAIN+dann?
-    # Wenn KOUS ->cp-> benötigen ->re-> dann: already ordered as SUBwenn-MAINdann
     sub_clause = -1
     main_clause = -1
     main_verb = None
@@ -81,16 +76,10 @@ def reorder_sub_main(clauses):
 
     if sub_clause >= 0:
         assert main_verb is not None
-
-        # print(f"sub_clause: {clauses[sub_clause]}", file=sys.stderr)
         for j, clause in enumerate(clauses):
             if main_verb in clause:
                 main_clause = j
-        # if main_clause >= 0: # assert as there should be a main clause for the subordinate!
-        #    print(f"main_clause: {clauses[main_clause]}", file=sys.stderr)
-
         if sub_clause > main_clause:
-            # swap(clauses, sub_clause, main_clause)
             # TODO: instead of simply swapping them, should rather put the subclause in front of the corresponding main clause, in the case there are more than 2 clauses...
             clauses[sub_clause], clauses[main_clause] = clauses[main_clause], clauses[sub_clause]
 
