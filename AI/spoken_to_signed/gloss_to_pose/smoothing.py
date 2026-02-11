@@ -8,10 +8,7 @@ from scipy.spatial.distance import cdist
 
 
 def pose_savgol_filter(pose: Pose):
-    # If we want this to be faster, here is a possible solution
-    # https://stackoverflow.com/questions/75221888/fast-savgol-filter-on-3d-tensor/75406720#75406720
-
-    # Smoothing the face does not result in a good result, so we skip it
+  
     [face_component] = [c for c in pose.header.components if c.name == "FACE_LANDMARKS"]
     face_range = range(
         pose.header._get_point_index("FACE_LANDMARKS", face_component.points[0]),

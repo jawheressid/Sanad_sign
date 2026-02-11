@@ -11,7 +11,6 @@ class FingerspellingPoseLookup(CSVPoseLookup):
 
         super().__init__(directory=str(fs_directory))
 
-        # Precompute the sorted alphabets to make the lookup faster
         self.alphabets = {
             spoken_language: {
                 signed_language: sorted(si_values.keys(), key=len, reverse=True)
@@ -52,7 +51,6 @@ class FingerspellingPoseLookup(CSVPoseLookup):
 
         poses = list(self.characters_lookup(word.lower(), spoken_language, signed_language))
 
-        # hold the last letters longer to make it more readable
         poses[-1] = self.stretch_pose(poses[-1], 2)
 
         return concatenate_poses(poses)
