@@ -1,5 +1,3 @@
-# originally written by Anne Goehring
-# adapted by Mathias Müller
 import sys
 
 from .common import load_spacy_model
@@ -26,12 +24,10 @@ def print_token(token):
 
 def attach_svp(tokens):
     for token in tokens:
-        # fix the wrong verb lemma first
         if token.pos_ == "VERB":
             token.lemma_ = token.lemma_.lower()
             if not token.lemma_.endswith("n"):
                 token.lemma_ += "n"
-        # and prefix the separable verb particle to the corrected lemma
         elif token.dep_ == "svp":
             token.head.lemma_ = token.lemma_ + token.head.lemma_
 
@@ -44,8 +40,8 @@ def get_clauses(tokens):
         t
         for t in tokens
         if (t.pos_ == "VERB" and t.dep_ != "oc")
-        or (t.pos_ == "AUX" and t.dep_ == "mo" and t.head.pos_ == "VERB")  # AUX in subclause
-        or t.dep_ == "ROOT"  
+        or (t.pos_ == "AUX" and t.dep_ == "mo" and t.head.pos_ == "VERB")
+        or t.dep_ == "ROOT"
     ]
     subtrees = [[t for t in v.subtree] for v in verbs]
     clauses = [s for s in subtrees]
@@ -80,21 +76,18 @@ def reorder_sub_main(clauses):
             if main_verb in clause:
                 main_clause = j
         if sub_clause > main_clause:
-            # TODO: instead of simply swapping them, should rather put the subclause in front of the corresponding main clause, in the case there are more than 2 clauses...
             clauses[sub_clause], clauses[main_clause] = clauses[main_clause], clauses[sub_clause]
 
     return clauses
 
 
 def get_triplets(pairs, word_order="sov"):
-    # pairs: [(s,v), (o,v)]
     triplets = []
 
     for i in range(len(pairs)):
         for j in range(i + 1, len(pairs)):
-            # same verb
             if pairs[i][1] == pairs[j][1]:
-                v = pairs[i][1]  # or pairs[j][1]
+                v = pairs[i][1]
                 if pairs[i][0].dep_ in {"sb", "nsubj"}:
                     s = pairs[i][0]
                     o = pairs[j][0]
@@ -112,15 +105,11 @@ def get_triplets(pairs, word_order="sov"):
 
 
 def swap(tokens, token_a, token_b):
-    # token_a(fter) should swap with token_b(efore) in the sequence of tokens
-    # [ ...b...a...] => [...a...b...]
     new_tokens = []
 
-    # move the verb
     if token_a.head == token_b:
         verb = token_b
         subtree = list(token_a.subtree)
-        # print('move the verb after the subtree', file=sys.stderr)
         insubtree = False
         for t in tokens:
             if t == verb:
@@ -138,7 +127,6 @@ def swap(tokens, token_a, token_b):
         verb = token_a
         subtree = list(token_b.subtree)
         put_a = False
-        # print('move the verb before the subtree', file=sys.stderr)
         for t in tokens:
             if t == verb:
                 continue
@@ -147,7 +135,6 @@ def swap(tokens, token_a, token_b):
                 put_a = True
             new_tokens.append(t)
     else:
-        # print('swap the subject and the object', file=sys.stderr)
         subtree_a = list(token_a.subtree)
         subtree_b = list(token_b.subtree)
         put_a = False
@@ -163,49 +150,38 @@ def swap(tokens, token_a, token_b):
 def reorder_svo_triplets(clause, word_order="sov"):
     pairs = []
     for token in clause:
-        # print_token(token)
         if token.dep_ in {
             "sb",
             "oa",
             "nsubj",
             "obj",
-            "obl:arg",  # FR
+            "obl:arg",
         }:
             pairs.append((token, token.head))
 
-    # print(pairs, file=sys.stderr)
     reordered_triplets = get_triplets(pairs, word_order=word_order)
-    # print(word_order, 'reordered:', reordered_triplets, file=sys.stderr)
     if reordered_triplets:
-        # 6 possible (a,b,c)-triplet order
         (token_a, token_b, token_c) = reordered_triplets[0]
         if (token_a.i < token_b.i) and (token_b.i < token_c.i):
-            # print('# 1,2,3 => no change', file=sys.stderr)
             pass
         elif (token_a.i < token_b.i) and (token_b.i > token_c.i):
-            # print('# 1,3,2 => swap 3,2', file=sys.stderr)
-            # print_token(token_b)
-            # print_token(token_c)
             clause = swap(clause, token_b, token_c)
         elif (token_a.i > token_b.i) and (token_a.i < token_c.i):
-            # print('# 2,1,3 => swap 2,1', file=sys.stderr)
             clause = swap(clause, token_a, token_b)
         elif (token_a.i < token_b.i) and (token_a.i > token_c.i):
-            print("# 2,3,1 => put 1 before", file=sys.stderr)  # TODO
+            print("# 2,3,1 => put 1 before", file=sys.stderr)
             pass
         elif (token_a.i > token_b.i) and (token_a.i > token_c.i):
-            print("# 3,1,2 => put 3 after", file=sys.stderr)  # TODO
+            print("# 3,1,2 => put 3 after", file=sys.stderr)
             pass
         elif (token_a.i > token_b.i) and (token_b.i > token_c.i):
-            # print('# 3,2,1 => swap 3,1', file=sys.stderr)
             clause = swap(clause, token_a, token_c)
 
     return clause
 
 
 def haben_main_verb(token):
-    if token.lemma_ == "haben":
-        # is there a dependent main verb?
+    if token.lemma_ in {"avoir", "etre", "être"}:
         for c in token.children:
             if c.pos_ == "VERB" and c.dep_ == "oc":
                 return False
@@ -217,77 +193,61 @@ def haben_main_verb(token):
 def gloss_de_poss_pronoun(token):
     # Possessive pronouns (language-specific)
     pposat_map = {
-        "M": "mein",
-        "m": "mein",
-        "D": "dein",
-        "d": "dein",
-        "S": "sein",
-        "s": "sein",
-        "i": "ihr",
-        "I": "Ihr",
-        "U": "unser",
-        "u": "unser",
-        "E": "euer",
-        "e": "euer",
+        "M": "mon",
+        "m": "mon",
+        "D": "ton",
+        "d": "ton",
+        "S": "son",
+        "s": "son",
+        "i": "votre",
+        "I": "votre",
+        "U": "notre",
+        "u": "notre",
+        "E": "votre",
+        "e": "votre",
     }
 
-    # return 'IX-'+pposat_map[token.text[0]]
     return "(" + pposat_map[token.text[0]] + ")"
 
 
 def glossify(tokens):
     for t in tokens:
-        # print_token(t)
 
-        # default: lemmatize
         gloss = t.lemma_
 
-        # Plural nouns with suffix "+"
         if t.tag_ == "NN" and "Number=Plur" in t.morph:
             gloss += "+"
 
-        # word form for adverbs (spacy may set a wrong lemma)
         elif t.pos_ == "ADV":
             gloss = t.text.lower()
 
-        # mark attributive possessive pronouns: put the base form in parentheses
         elif t.tag_ == "PPOSAT":
             gloss = gloss_de_poss_pronoun(t)
 
-        # lowercased word form for pronouns since the lemma sometimes looses the person information
         elif t.tag_ in [
             "PPER",
             "PRF",
             "PDS",
             "PRON",
-            "DET",  # FR, e.g. "sa  son DET DET ..."
+            "DET",
         ]:
             gloss = t.text.lower() + "-IX"
 
-        # "haben" as main verb should be glossed as "DA"
         elif haben_main_verb(t):
-            gloss = "da"
+            gloss = "avoir"
 
-        # other forms of "haben" and "sein" (auxiliary) should be skipped
-        # FR: avons  avoir AUX AUX aux:tense
         elif (
-            t.lemma_ in {"habe", "haben", "sein"}
+            t.lemma_ in {"avoir", "etre", "être"}
             or (t.lemma_ == "avoir" and t.pos_ == "AUX")
-        ):  # FR
+        ):
             continue
-
-        # lemma of NER-identified location entities preceded by preposition
-        # if t.ent_type_ == "LOC" and t.head.pos_ == "ADP":
-        #     glosses.append(t.head.text)
 
         yield (gloss, t.text)
 
 
 def clause_to_gloss(clause, lang: str, punctuation=False) -> tuple[list[str], list[str]]:
-    # Rule 1: Extract subject-verb-object triplets and reorder them
     clause = reorder_svo_triplets(clause)
 
-    # Rule 2: Discard all tokens with unwanted PoS
     tokens = [
         t
         for t in clause
@@ -296,64 +256,28 @@ def clause_to_gloss(clause, lang: str, punctuation=False) -> tuple[list[str], li
         or (t.pos_ == "ADV" and t.dep_ != "svp")
         or (t.pos_ == "PRON" and t.dep_ != "ep")
         or (t.dep_ == "ng")
-        or (t.lemma_ == "kein")
-        or (t.tag_ in {"PTKNEG", "KON", "PPOSAT"})  # TODO: "PDAT" e.g. gloss("dieses")=IX?
-        or (t.tag_ == "DET" and "Poss=Yes" in t.morph)  # son  son DET DET det ami Number=Sing|Poss=Yes
+        or (t.lemma_ == "aucun")
+        or (t.tag_ in {"PTKNEG", "KON", "PPOSAT"})
+        or (t.tag_ == "DET" and "Poss=Yes" in t.morph)
         or (t.tag_ == "CCONJ")
     ]
 
-    # Apply punctuation as its own lemma
     if punctuation:
         for t in tokens:
             if t.pos_ == "PUNCT":
                 t.lemma_ = t.text
 
-    # Rule 3: Move adverbs to the start?
-    # TODO: Move verb modifying adverbs before the verb in each clause
     adverbs = [t for t in tokens if t.pos_ == "ADV" and t.dep_ == "mo" and t.head.pos_ == "VERB"]
     tokens = [t for t in tokens if t not in adverbs]
     tokens = adverbs + tokens
 
-    # Rule 4: Move location words to the start
-    # TODO: move only if it modifies the verb?
     locations = [t for t in tokens if t.ent_type_ == "LOC"]
     tokens = [t for t in tokens if t not in locations]
     tokens = locations + tokens
-
-    # # Rule 5: Move negation words to the end
-    # negations = [t for t in tokens if t.dep_ == "ng"]
-    # tokens = [t for t in tokens if t not in negations] + negations
-    #
-    # if len(tokens) > 0:
-    #     from spacy.tokens import Token
-    #
-    #     token = tokens[0]
-    #     extra_token_id = len(token.doc)
-    #
-    #     neg_token = Token(token.vocab, token.doc, extra_token_id)
-    #     neg_token.lemma_ = "<neg>"
-    #     extra_token_id += 1
-    #
-    #     neg_close_token = Token(token.vocab, token.doc, extra_token_id)
-    #     neg_close_token.lemma_ = "</neg>"
-    #     extra_token_id += 1
-    #
-    #     for token in list(tokens):
-    #         if token.dep_ == "ng":
-    #             tokens.insert(0, neg_token)
-    #             tokens.remove(token)
-    #             tokens.append(neg_close_token)
-    #         elif token.lemma_ == "kein":
-    #             tokens.insert(tokens.index(token), neg_token)
-    #             tokens.append(neg_close_token)
-
-    # TODO: is compound splitting necessary? only taking the first noun loses information!
-    # Rule 6: Replace compound nouns with the first noun
     for i, t in enumerate(tokens):
         if t.dep_ == "compound":
             tokens[i] = t.head
 
-    # Rule 7: Glossify all tokens, i.e. lemmatize most tokens
     glosses, tokens = zip(*list(glossify(tokens)))
 
     return glosses, tokens
@@ -365,19 +289,14 @@ def text_to_gloss_given_spacy_model(text: str, spacy_model, lang: str = "fr", pu
 
     doc = spacy_model(text)
 
-    # Rule 0: Attach separable verb particle to the verb lemma (not used for French)
-
-    # split sentence into separate clauses
     clauses = get_clauses(doc)
 
-    # reorder clauses
     clauses = reorder_sub_main(clauses)
 
     glosses_all_clauses = []
     tokens_all_clauses = []
 
-    # glossify each clause
-    glossed_clauses = []  # type: List[Dict[str, List[str]]]
+    glossed_clauses = []
 
     for clause in clauses:
         glosses, tokens = clause_to_gloss(clause, lang, punctuation=punctuation)
@@ -385,11 +304,9 @@ def text_to_gloss_given_spacy_model(text: str, spacy_model, lang: str = "fr", pu
         tokens_all_clauses.extend(tokens)
         glossed_clauses.append({"glosses": glosses, "tokens": tokens})
 
-    # clause separator "|" and end of sentence "||"
     gloss_string = " | ".join([" ".join(list(clause["glosses"])) for clause in glossed_clauses])
     gloss_string += " ||"
 
-    # Final Rule: Begin sequence with a capital
     gloss_string = gloss_string.title()
 
     return {"glosses": glosses_all_clauses, "tokens": tokens_all_clauses, "gloss_string": gloss_string}
